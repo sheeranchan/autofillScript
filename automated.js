@@ -1,4 +1,3 @@
-
 const puppeteer = require('puppeteer');
 
 (async () => {
@@ -11,71 +10,87 @@ const puppeteer = require('puppeteer');
 
     const page = await browser.newPage();
 
-    await page.goto('https://agent.hito-link.jp/login', { waitUntil: 'networkidle0' });
-    await page.click('a[href="https://agent.hito-link.jp/oauth2/authorization/agt"]', { visible: true });
-    await page.waitForNavigation();
+    try {
+        await page.goto('https://agent.hito-link.jp/login', { waitUntil: 'networkidle0' });
+        await page.click('a[href="https://agent.hito-link.jp/oauth2/authorization/agt"]', { visible: true });
+    } catch (error) {
+        console.log('did not land on login page initially');
+    }
 
-    await page.waitForSelector('#email', { visible: true });
-    await page.type('#email', '<your email>');
-    await page.type('#password', '<your pwd>');
-    await page.click('#next');
-    await page.waitForNavigation();
+    try {
+        await page.waitForSelector('#email', { visible: true });
+        await page.type('#email', '<your username>');
+        await page.type('#password', '<your password>');
+        await page.click('#next');
+    } catch (error) {
+        console.log('Initial page did not land on login page, the cache may logged user in. SKIPPED.');
+    }
 
-    // Wait until there are no network requests for at least 15000 ms
-    await page.waitForNetworkIdle({ timeout: 15000 }); // waits up to 15s
+    // Wait until there are no network requests for at least 20000 ms
+    await page.waitForNetworkIdle({ timeout: 20000 }); // waits up to 20s
 
-    // Wait for the <p> element containing '絞り込み' and click on it
-    await page.evaluate(() => {
-        const p = Array.from(document.querySelectorAll('p')).find(
-            el => el.textContent.includes('絞り込み')
-        );
-        if (p) {
-            p.click();
-        }
-    });
-
-    // Wait for the <p> element containing '絞り込み' and click on it
-    await page.evaluate(() => {
-        const selects = Array.from(document.querySelectorAll('select'));
-        const targetSelect = selects.find(select =>
-            //Array.from(select.options).some(opt => opt.text.trim() === '李　志鵬')
-            Array.from(select.options).some(opt => opt.text.trim() === '星野　加奈子')
-        );
-
-        if (targetSelect) {
-            const targetOption = Array.from(targetSelect.options).find(
-                //opt => opt.text.trim() === '李　志鵬'
-                opt => opt.text.trim() === '星野　加奈子'
+    try {
+        // Wait for the <p> element containing '絞り込み' and click on it
+        await page.evaluate(() => {
+            const p = Array.from(document.querySelectorAll('p')).find(
+                el => el.textContent.includes('絞り込み')
             );
-            targetSelect.value = targetOption.value;
-            targetSelect.dispatchEvent(new Event('change', { bubbles: true }));
-        } else {
-            console.error('Option not found');
-        }
-    });
+            if (p) {
+                p.click();
+            }
+        });
 
-    // Wait for the <p> element containing '適用' and click on it
-    await page.evaluate(() => {
-        const p2 = Array.from(document.querySelectorAll('p')).find(
-            el => el.textContent.includes('適用')
-        );
-        if (p2) {
-            p2.click();
-        }
-    });
+
+        // Wait for the <p> element containing '李　志鹏' and click on it
+        await page.evaluate(() => {
+            const selects = Array.from(document.querySelectorAll('select'));
+            const targetSelect = selects.find(select =>
+                Array.from(select.options).some(opt => opt.text.trim() === '李　志鹏B')
+                //Array.from(select.options).some(opt => opt.text.trim() === '星野　加奈子')
+            );
+
+            if (targetSelect) {
+                const targetOption = Array.from(targetSelect.options).find(
+                    opt => opt.text.trim() === '李　志鹏B'
+                    //opt => opt.text.trim() === '星野　加奈子'
+                );
+                targetSelect.value = targetOption.value;
+                targetSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            } else {
+                console.error('Option not found');
+            }
+        });
+
+        // Wait for the <p> element containing '適用' and click on it
+        await page.evaluate(() => {
+            const p2 = Array.from(document.querySelectorAll('p')).find(
+                el => el.textContent.includes('適用')
+            );
+            if (p2) {
+                p2.click();
+            }
+        });
+
+    } catch (error) {
+        console.log('did not need to filter by consultant');
+    }
+
+    // Wait until there are no network requests for at least 20000 ms
+    await page.waitForNetworkIdle({ timeout: 20000 }); // waits up to 20s
+
 
     //Fetch the candidate list by waiting for the top position element to be visible
     await page.waitForSelector('div#top-position', { visible: true });
-    // Click the 3rd row
+    // Click the n-th row
     try {
-        // Wait for the 3rd row specifically
-        await page.waitForSelector('#top-position > div:nth-child(2)', { visible: true });
+        // Wait for the n-th row specifically
+        await page.waitForSelector('#top-position > div:nth-child(1)', { visible: true });
 
-        // Click the 6th row
-        await page.click('#top-position > div:nth-child(2)');
+        // Click the n-th row
+        await page.click('#top-position > div:nth-child(1)');
 
     } catch (error) {
-        console.error('Error clicking sixth row:', error);
+        console.error('Error clicking required row:', error);
     }
 
 
@@ -178,269 +193,130 @@ const puppeteer = require('puppeteer');
         }
     });
 
+
+    // Wait until there are no network requests for at least 20000 ms
+    await page.waitForNetworkIdle({ timeout: 20000 }); // waits up to 20s
     await page.click('#slide-panel-middle input#attachment');
+    //await page.screenshot({ path: '/home/schen/' + `before-select-履歴書_.png`, fullPage: true });
 
-    //select the ‘履歴書_’ option
-    await page.evaluate(() => {
-        const buttons = Array.from(document.querySelectorAll('#slide-panel-middle #top-position table tr:nth-child(1) td button p'));
+    try {
+        //添付ファイル
+        await page.evaluate(() => {
+            const el = Array.from(document.querySelectorAll('span'))
+                .find(el => el.textContent.includes('添付ファイル'));
+            if (el) el.closest('label')?.click();
+        });
+    } catch (error) {
+        console.log('Attachment upload box was not ticked successfully.');
+    }
 
-        //移除之前的附件
-        const prevTargetSelect = buttons.find(
-            el => el.text.trim().includes('削除')
-        );
+    try {
+        //select the ‘履歴書_’ option
+        await page.evaluate(() => {
+            const select = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(1) td select'));
 
-        if (prevTargetSelect) {
-            prevTargetSelect.click();
-        }
-
-        const selects = Array.from(document.querySelectorAll('#slide-panel-middle #top-position table tr:nth-child(1) td select'));
-
-        const targetSelect = selects.find(select =>
-            Array.from(select.options).some(opt => opt.text.trim().includes('履歴書_'))
-        );
-
-        if (targetSelect) {
-            const targetOption = Array.from(targetSelect.options).find(
-                opt => opt.text.trim().includes('履歴書_')
+            const targetSelect = select.find(select =>
+                Array.from(select.options).some(opt => opt.text.trim().includes('履歴書_'))
             );
-            targetSelect.value = targetOption.value;
-            targetSelect.dispatchEvent(new Event('change', { bubbles: true }));
 
-            const btn = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(1) td button')).find(
-                el => el.textContent.trim() === '追加'
-            );
-            if (btn) {
-                btn.click();
+            if (targetSelect) {
+                const targetOption = Array.from(targetSelect.options).find(
+                    opt => opt.text.trim().includes('履歴書_')
+                );
+                targetSelect.value = targetOption.value;
+                targetSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+                const btn = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(1) td button')).find(
+                    el => el.textContent.trim() === '追加'
+                );
+                if (btn) {
+                    btn.click();
+                }
+            } else {
+                console.error('Option 1 not found');
             }
-        } else {
-            console.error('Option not found');
-        }
+        });
+    } catch (error) {
+        console.log('1st attachment is not done.');
+    }
 
-        //-----------------------------------------------------------2-------------------------------------------------
-        //const buttons2 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(2) td button p'));
+    //await page.screenshot({ path: '/home/schen/' + `after-select-履歴書_.png`, fullPage: true });
 
-        ////移除之前的附件
-        //const prevTargetSelect2 = buttons2.find(select =>
-        //    Array.from(select.options).some(opt => opt.text.trim().includes('削除'))
-        //);
+    // Wait until there are no network requests for at least 20000 ms
+    await page.waitForNetworkIdle({ timeout: 20000 }); // waits up to 20s
 
-        //if (prevTargetSelect2) {
-        //    prevTargetSelect2.click();
-        //}
+    try {
+        await page.evaluate(() => {
+            const select2 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(3) td select'));
 
-        //const selects2 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(1) td select'));
+            const targetSelect2 = select2.find(select2 =>
+                Array.from(select2.options).some(opt => opt.text.trim().includes('職務経歴書_'))
+            );
 
-        //const targetSelect2 = selects2.find(select =>
-        //    Array.from(select.options).some(opt => opt.text.trim().includes('職務経歴書_'))
-        //);
-
-        //if (targetSelect2) {
-        //    const targetOption2 = Array.from(targetSelect2.options).find(
-        //        opt => opt.text.trim().includes('職務経歴書_')
-        //    );
-        //    targetSelect2.value = targetOption2.value;
-        //    targetSelect2.dispatchEvent(new Event('change', { bubbles: true }));
-
-        //    const btn2 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(2) td button')).find(
-        //        el => el.textContent.trim() === '追加'
-        //    );
-        //    if (btn2) {
-        //        btn2.click();
-        //    }
-        //} else {
-        //    console.error('Option not found');
-        //}
+            if (targetSelect2) {
+                const targetOption2 = Array.from(targetSelect2.options).find(
+                    opt2 => opt2.text.trim().includes('職務経歴書_')
+                );
+                targetSelect2.value = targetOption2.value;
+                targetSelect2.dispatchEvent(new Event('change', { bubbles: true }));
 
 
-        ////-----------------------------------------------------------3-------------------------------------------------
-        //const buttons3 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(3) td button p'));
+                const btn2 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(3) td button')).find(
+                    el2 => el2.textContent === '追加'
+                );
 
-        ////移除之前的附件
-        //const prevTargetSelect3 = buttons3.find(select =>
-        //    Array.from(select.options).some(opt => opt.text.trim().includes('削除'))
-        //);
+                if (btn2) {
+                    btn2.click();
+                }
+            } else {
+                console.error('Option 2 not found');
+            }
+        });
+    } catch (error) {
+        console.log('2nd attachment is not done.');
+    }
 
-        //if (prevTargetSelect3) {
-        //    prevTargetSelect3.click();
-        //}
-
-        //const targetSelect3 = selects3.find(select =>
-        //    Array.from(select.options).some(opt => opt.text.trim().includes('推薦状_'))
-        //);
-
-        //if (targetSelect3) {
-        //    const targetOption3 = Array.from(targetSelect3.options).find(
-        //        opt => opt.text.trim().includes('推薦状_')
-        //    );
-        //    targetSelect3.value = targetOption.value;
-        //    targetSelect3.dispatchEvent(new Event('change', { bubbles: true }));
-
-        //    const btn3 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(3) td button')).find(
-        //        el => el.textContent.trim() === '追加'
-        //    );
-        //    if (btn3) {
-        //        btn3.click();
-        //    }
-        //} else {
-        //    console.error('Option not found');
-        //}
+    //await page.screenshot({ path: '/home/schen/' + `after-select-職務経歴書_.png`, fullPage: true });
 
 
-        //const selects2_1 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(2) td button p'));
+    // Wait until there are no network requests for at least 20000 ms
+    await page.waitForNetworkIdle({ timeout: 20000 }); // waits up to 20s
 
-        //移除之前的附件
-        //const prevTargetSelect2 = selects2_1.find(select =>
-        //    Array.from(select.options).some(opt => opt.text.trim().includes('削除'))
-        //);
+    try {
+        await page.evaluate(() => {
+            const select3 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(5) td select'));
 
-        //if (prevTargetSelect2) {
-        //    prevTargetSelect2.click();
-        //}
+            const targetSelect3 = select3.find(select3 =>
+                Array.from(select3.options).some(opt3 => opt3.text.trim().includes('推薦状_'))
+            );
 
-        //const selects2_2 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(2) td select'));
-
-        //const targetSelect2 = selects2_2.find(select =>
-        //    Array.from(select.options).some(opt => opt.text.trim().includes('職務経歴書_'))
-        //);
-
-        //if (targetSelect2) {
-        //    const targetOption2 = Array.from(targetSelect2.options).find(
-        //        opt => opt.text.trim().includes('職務経歴書_')
-        //    );
-        //    targetSelect2.value = targetOption2.value;
-        //    targetSelect2.dispatchEvent(new Event('change', { bubbles: true }));
-
-        //    const btn2 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(2) td button')).find(
-        //        el => el.textContent === '追加'
-        //    );
-        //    if (btn2) {
-        //        btn2.click();
-        //    }
-        //} else {
-        //    console.error('Option not found');
-        //}
-
-        //const selects3_1 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(3) td button p'));
-
-        ////移除之前的附件
-        //const prevTargetSelect3 = selects3_1.find(select =>
-        //    Array.from(select.options).some(opt => opt.text.trim().includes('削除'))
-        //);
-
-        //if (prevTargetSelect3) {
-        //    prevTargetSelect3.click();
-        //}
-
-        //const selects3_2 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(3) td select'));
-
-        //const targetSelect3 = selects3_2.find(select =>
-        //    Array.from(select.options).some(opt => opt.text.trim().includes('推薦状_'))
-        //);
-
-        //if (targetSelect3) {
-        //    const targetOption3 = Array.from(targetSelect3.options).find(
-        //        opt => opt.text.trim().includes('推薦状_')
-        //    );
-        //    targetSelect3.value = targetOption3.value;
-        //    targetSelect3.dispatchEvent(new Event('change', { bubbles: true }));
+            if (targetSelect3) {
+                const targetOption3 = Array.from(targetSelect3.options).find(
+                    opt => opt.text.trim().includes('推薦状_')
+                );
+                targetSelect3.value = targetOption3.value;
+                targetSelect3.dispatchEvent(new Event('change', { bubbles: true }));
 
 
-        //    const btn3 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(3) td button')).find(
-        //        el => el.textContent === '追加'
-        //    );
-        //    if (btn3) {
-        //        btn3.click();
-        //    }
-        //} else {
-        //    console.error('Option not found');
-        //}
-        //});
+                const btn3 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(5) td button')).find(
+                    el3 => el3.textContent === '追加'
+                );
 
-        // Wait until there are no network requests for at least 20000 ms
-        //await page.waitForNetworkIdle({ timeout: 20000 }); // waits up to 20s
+                if (btn3) {
+                    btn3.click();
+                }
+            } else {
+                console.error('Option 3 not found');
+            }
+        });
+    } catch (error) {
+        console.log('3rd attachment is not done.');
+    }
+    //await page.screenshot({ path: '/home/schen/' + `after-select-推薦状_.png`, fullPage: true });
 
-        //await page.evaluate(() => {
+    // Wait until there are no network requests for at least 20000 ms
+    await page.waitForNetworkIdle({ timeout: 20000 }); // waits up to 20s
 
-        //});
-
-
-        // Wait until there are no network requests for at least 20000 ms
-        //await page.waitForNetworkIdle({ timeout: 20000 }); // waits up to 20s
-
-        //await page.evaluate(() => {
-        //    const selects3 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(3) td select'));
-
-        //    //移除之前的附件
-        //    const prevTargetSelect3 = selects3.find(select =>
-        //        Array.from(select.options).some(opt => opt.text.trim().includes('削除'))
-        //    );
-
-        //    if (prevTargetSelect3) {
-        //        prevTargetSelect3.click();
-        //    }
-
-        //    const targetSelect3 = selects3.find(select =>
-        //        Array.from(select.options).some(opt => opt.text.trim().includes('推薦状_'))
-        //    );
-
-        //    if (targetSelect3) {
-        //        const targetOption3 = Array.from(targetSelect3.options).find(
-        //            opt => opt.text.trim().includes('推薦状_')
-        //        );
-        //        targetSelect3.value = targetOption3.value;
-        //        targetSelect3.dispatchEvent(new Event('change', { bubbles: true }));
-
-
-        //        const btn3 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(3) td button')).find(
-        //            el => el.textContent === '追加'
-        //        );
-        //        if (btn3) {
-        //            btn3.click();
-        //        }
-        //    } else {
-        //        console.error('Option not found');
-        //    }
-        //});
-
-
-        // Wait until there are no network requests for at least 20000 ms
-        //await page.waitForNetworkIdle({ timeout: 20000 }); // waits up to 20s
-
-        //await page.evaluate(() => {
-        //    const selects4 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(4) td select'));
-
-        //    //移除之前的附件
-        //    const prevTargetSelect4 = selects4.find(select =>
-        //        Array.from(select.options).some(opt => opt.text.trim().includes('削除'))
-        //    );
-
-        //    if (prevTargetSelect4) {
-        //        prevTargetSelect4.click();
-        //    }
-
-        //    const targetSelect4 = selects4.find(select =>
-        //        Array.from(select.options).some(opt => opt.text.trim().includes('推薦状_'))
-        //    );
-
-        //    if (targetSelect4) {
-        //        const targetOption4 = Array.from(targetSelect4.options).find(
-        //            opt => opt.text.trim().includes('推薦状_')
-        //        );
-        //        targetSelect4.value = targetOption4.value;
-        //        targetSelect4.dispatchEvent(new Event('change', { bubbles: true }));
-
-
-        //        const btn4 = Array.from(document.querySelectorAll('#slide-panel-middle table tr:nth-child(4) td button')).find(
-        //            el => el.textContent === '追加'
-        //        );
-        //        if (btn4) {
-        //            btn4.click();
-        //        }
-        //    } else {
-        //        console.error('Option not found');
-        //    }
-
-    });
 
     //点击保存按钮
     // Wait for the <p> element containing '保存' and click on it
@@ -488,11 +364,13 @@ const puppeteer = require('puppeteer');
         }
     });
 
+    // Wait until there are no network requests for at least 20000 ms
+    await page.waitForNetworkIdle({ timeout: 20000 }); // waits up to 20s
     //确认推荐
     // Wait for the <p> element containing '推薦' and click on it
     const found = await page.evaluate(() => {
         const p7 = Array.from(document.querySelectorAll('body div.mt-7 button p')).find(
-            el => el.textContent.includs('推薦')
+            el => el.textContent.includes('推薦')
         );
         if (p7) {
             p7.click();
