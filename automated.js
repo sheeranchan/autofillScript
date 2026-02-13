@@ -41,8 +41,8 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         });
 
         await page.waitForSelector('#email', { visible: true });
-        await page.type('#email', '<your username>');
-        await page.type('#password', '<your password>');
+        await page.type('#email', 'li.zhipeng@ibp-grp.com');
+        await page.type('#password', 'Zaq11qaz..');
         await page.click('#next');
         await page.waitForNavigation({ waitUntil: 'networkidle2' });
     } else {
