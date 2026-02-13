@@ -54,10 +54,11 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
     // Fetch the candidate list by waiting for the top position element to be visible
     await page.waitForSelector('div#top-position', { visible: true });
 
-    // Click the 4th row
+    // Click the n-th row candidate you want to recommend (e.g. the 4th candidate, input 4)
     try {
-        await page.waitForSelector('#top-position > div:nth-child(4)', { visible: true });
-        await page.click('#top-position > div:nth-child(4)');
+        let num = 4; // Change this to the desired candidate row number
+        await page.waitForSelector('#top-position > div:nth-child(' + num +')', { visible: true });
+        await page.click('#top-position > div:nth-child(' + num +')');
     } catch (error) {
         console.error('Error >>> clicking required row:', error);
     }
@@ -375,7 +376,7 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
     console.log(`Total jobs processed: ${processedCount}`);
     console.log(`========================================\n`);
 
-    // Logout
+    // Logout - you need to logged out afterwards, otherwise you may be blocked
     console.log('INFO >>> Starting logout process...');
 
     await page.evaluate(() => {
